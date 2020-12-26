@@ -14,7 +14,7 @@ class player:
 
     def __init__(self, length):
         self.length = length
-        self.image = pygame.image.load("block.jpg")
+        self.image = pygame.image.load("Images//block.jpg")
         self.playerWidth = self.image.get_rect().size[0]
         self.playerHeight = self.image.get_rect().size[1]
 
@@ -76,7 +76,7 @@ class apple:
     appleCounter = 0
     
     def __init__(self):
-        self.image = pygame.image.load("apple.png")
+        self.image = pygame.image.load("Images//apple.png")
         self.appleWidth = self.image.get_rect().size[0]
         self.appleHeight = self.image.get_rect().size[1]
         self.positioning()
