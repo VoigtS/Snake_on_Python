@@ -3,27 +3,47 @@ import random
 from pygame import *
 
 class player:
+    x = [0]
+    y = [50]
+    playerWidth = 0
+    playerHeight = 0
     direction = 0
-    gameSpeed = 5
+    gameSpeed = 200
     playerWait = 0
 
     def __init__(self, length):
-        self.pos = position()
         self.length = length
         self.image = pygame.image.load("block.jpg")
+        self.playerWidth = self.image.get_rect().size[0]
+        self.playerHeight = self.image.get_rect().size[1]
+
+        for i in range(self.length - 1):
+            self.x.append(0)
+            self.y.append(50)
+            self.x[i] = (self.length - i - 1) * self.playerWidth
 
     def playerAutoMove(self):
         self.playerWait += 1
         
         if (self.playerWait >= self.gameSpeed):
-            if(self.direction == 0  and self.pos.x < app.windowWidth - self.image.get_rect().size[0]):
-                self.pos.moveRight()
-            elif(self.direction == 1 and self.pos.x > 0):
-                self.pos.moveLeft()
-            elif(self.direction == 2 and self.pos.y > 0):
-                self.pos.moveUp()
-            elif(self.direction == 3  and self.pos.y < app.windowHeight - self.image.get_rect().size[1]):
-                self.pos.moveDown()
+
+            #for i in range(len(self.x)):
+              #  print(self.x[i], self.y[i])
+            #print("xxxx" * 10)
+
+            for i in range(self.length - 1, 0, -1):
+                self.x[i] = self.x[i-1]
+                self.y[i] = self.y[i-1]
+            
+            if(self.direction == 0  and self.x[0] < app.windowWidth - self.playerWidth):
+                self.x[0] += self.playerWidth
+            elif(self.direction == 1 and self.x[0] > 0):
+                self.x[0] -= self.playerWidth
+            elif(self.direction == 2 and self.y[0] > 0):
+                self.y[0] -= self.playerHeight
+            elif(self.direction == 3  and self.y[0] < app.windowHeight - self.playerHeight):
+                self.y[0] += self.playerHeight
+                
             self.playerWait = 0
 
     def moveRight(self):
@@ -38,37 +58,33 @@ class player:
     def moveDown(self):
         self.direction = 3
 
-    #def playerGrow(self):
-        
-        
+    def growPlayer(self, screen):
+        self.y.append(self.y[-1])
+        self.x.append(self.x[-1])
 
+        self.length += 1
+        
+    def drawPlayer(self, screen):
+        for i in range(self.length):
+            screen.blit(self.image, (self.x[i], self.y[i]))
+        
+        
 class apple:
+    x = 0
+    y = 0
+    appleWidth = 0
+    appleHeight = 0
     appleCounter = 0
     
     def __init__(self):
-        self.pos = position()
         self.image = pygame.image.load("apple.png")
+        self.appleWidth = self.image.get_rect().size[0]
+        self.appleHeight = self.image.get_rect().size[1]
         self.positioning()
 
     def positioning(self):
-        self.pos.x = random.randrange(app.windowWidth - self.image.get_rect().size[0])
-        self.pos.y = random.randrange(app.windowHeight - self.image.get_rect().size[1])
-
-class position:
-    x = 0
-    y = 50
-
-    def moveRight(self):
-        self.x += 1
-
-    def moveLeft(self):
-        self.x -= 1
-
-    def moveUp(self):
-        self.y -= 1
-    
-    def moveDown(self):
-        self.y += 1
+        self.x = random.randrange(app.windowWidth - self.appleWidth)
+        self.y = random.randrange(app.windowHeight - self.appleHeight)
 
 
 class app:
@@ -91,26 +107,18 @@ class app:
 
     def renderField(self):
         self.screen.fill(self.color)
-        self.score = self.font1.render('Score: ' + str(self.apple.appleCounter), True, (0, 0, 0))
+        self.score = self.font1.render('Score: ' + str(apple.appleCounter), True, (0, 0, 0))
         self.screen.blit(self.score, (0,0))
-        self.screen.blit(self.player.image, (self.player.pos.x, self.player.pos.y))
-        self.screen.blit(self.apple.image, (self.apple.pos.x, self.apple.pos.y))
+        self.player.drawPlayer(self.screen)
+        self.screen.blit(self.apple.image, (self.apple.x, self.apple.y))
         pygame.display.flip()
 
-    def quitEvent(self, event):
-        self.running = False
-        pygame.quit()
-        sys.exit()
-
-    def checkCollision(self, x1, y1, x2, y2):
-        playerSizeX = self.player.image.get_rect().size[0]
-        playerSizeY = self.player.image.get_rect().size[1]
-        appleSizeX = self.apple.image.get_rect().size[0]
-        appleSizeY = self.apple.image.get_rect().size[1]
+    def checkCollision(self, x1, y1, x2, y2, objectWidth, objectHeight):
         
-        if(x1 + playerSizeX >= x2 and x1 <= x2 + appleSizeX):
-            if(y1 + playerSizeY >= y2 and y1 <= y2 + appleSizeY):
-                self.apple.appleCounter += 1
+        if(x1 + self.player.playerWidth >= x2 and x1 <= x2 + objectWidth):
+            if(y1 + self.player.playerHeight >= y2 and y1 <= y2 + objectHeight):
+                apple.appleCounter += 1
+                self.player.growPlayer(self.screen)
                 return(True)
             
         return(False)
@@ -135,12 +143,17 @@ class app:
             self.renderField()
             self.player.playerAutoMove()
             
-            if(self.checkCollision(self.player.pos.x, self.player.pos.y, self.apple.pos.x, self.apple.pos.y)):
+            if(self.checkCollision(self.player.x[0], self.player.y[0], self.apple.x, self.apple.y, self.apple.appleWidth, self.apple.appleHeight)):
                 self.apple.positioning()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.quitEvent(event)
+
+    def quitEvent(self, event):
+        self.running = False
+        pygame.quit()
+        sys.exit()
 
 
 if __name__ == "__main__":
